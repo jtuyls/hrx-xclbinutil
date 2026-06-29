@@ -1,4 +1,3 @@
-// Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 // hrx_util.h - std-backed replacements for the Boost subset XRT's xclbinutil

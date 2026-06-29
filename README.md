@@ -27,10 +27,16 @@ without `boost::process`/`asio`.
 
 ## Build
 
+Prerequisites (system): CMake ≥3.20, Ninja, and a C++17 compiler (clang or gcc) —
+that's it. On Debian/Ubuntu: `sudo apt-get install cmake ninja-build clang`.
+(No `uuid-dev`: the vendored `xclbin.h` self-defines `uuid_t` since only the type
+is used — see the note in `vendor/include/xclbin.h`.)
+
 ```bash
 cmake -G Ninja -B bld -S . -DCMAKE_BUILD_TYPE=Release
 cmake --build bld --target hrx-xclbinutil
 # -> bld/tools/hrx-xclbinutil   (reports "XRT Build Version: 2.18.0")
+ctest --test-dir bld --output-on-failure   # functional smoke test
 ```
 
 ## Use

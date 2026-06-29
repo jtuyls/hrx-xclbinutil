@@ -1,4 +1,3 @@
-# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Self-contained, Boost-free, NPU-minimal build of `hrx-xclbinutil`.
@@ -63,3 +62,8 @@ target_compile_options(hrx-xclbinutil
                        $<$<PLATFORM_ID:Windows>:/EHsc /GR /w>)
 set_target_properties(hrx-xclbinutil
                       PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/tools")
+
+# --- tests (ctest) ---
+enable_testing()
+add_test(NAME smoke
+         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/test/run_tests.sh $<TARGET_FILE:hrx-xclbinutil>)
