@@ -1,0 +1,7 @@
+# Build output. Tracked: vendor/ (trimmed XRT source) + util/ (hrx shim).
+bld/
+bld-*/
+bin/
+*.log
+# generated at configure time
+vendor/xclbinutil/version.h
