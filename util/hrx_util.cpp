@@ -1,4 +1,3 @@
-// Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 // hrx_util.cpp - non-template implementation of the hrx util (JSON engine).
 // The rest of hrx:: (format, ptree, optional, program_options, algorithm, uuid,

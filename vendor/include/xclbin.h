@@ -48,11 +48,11 @@
 #  include <cstdlib>
 #  include <cstdint>
 #  include <algorithm>
-#  include <uuid/uuid.h>
+typedef unsigned char uuid_t[16];   /* self-contained: matches libuuid's uuid_t; avoids the uuid-dev header dep (type only, no libuuid functions/link) */
 # else
 #  include <stdlib.h>
 #  include <stdint.h>
-#  include <uuid/uuid.h>
+typedef unsigned char uuid_t[16];   /* self-contained: see above */
 # endif
 #elif defined(_WIN32)
 # if defined(_KERNEL_MODE)
