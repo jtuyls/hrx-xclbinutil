@@ -25,12 +25,7 @@ extern "C" {
 
 /************************** Constant Definitions *****************************/
 #include <stdint.h>
-#ifdef XCDO_DEBUG_STUB
 #include "cdo_io_debug.h"
 #include "cdo_debug_dma.h"
-#else
-#include "cdo_io_generic.h"
-#include "cdo_cmd_dma.h"
-#endif
 
 #endif /* XCDO_IO_H */

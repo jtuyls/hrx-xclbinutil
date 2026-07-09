@@ -22,11 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef _ENABLE_IPU_LX6_
-#define XPdi_Compress_Transform(...)
-#else
 void XPdi_Compress_Transform(XPdiLoad* PdiLoad, const char* pdi_file_out);
-#endif
 #ifdef __cplusplus
 }
 #endif

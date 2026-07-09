@@ -25,9 +25,6 @@
 #include "cdo_common.h"
 #include "cdo_io.h"
 #include "com_helper.h"
-#ifdef _ENABLE_IPU_LX6_
-#include "printf.h"
-#endif
 
 /************************** Constant Definitions *****************************/
 
@@ -393,13 +390,7 @@ int XCdo_LoadTransCdo(XCdoLoad *CdoLoad, char* Buf, const char* dataBuf,
  *****************************************************************************/
 void XCdo_Dma_Copy(void * dst, void * src, size_t len)
 {
-#ifdef _ENABLE_IPU_LX6_
-	//use adma copy in lx6
-	XCdo_IoMemcpy(dst,src,len);
-#else
-	// UT verify
 	memcpy(dst,src,len);
-#endif
 }
 
 /*****************************************************************************/

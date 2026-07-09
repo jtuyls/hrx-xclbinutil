@@ -26,7 +26,6 @@
 #include "cdo_cmd.h"
 #include "load_pdi.h"
 #include "pdi-transform.h"
-#include "platform-hw-config.h"
 #include "pdi-parsing-debug.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -39,12 +38,8 @@
 
 /***************** Macros (Inline Functions) Definitions *********************/
 /************************** Variable Definitions *****************************/
-#ifndef __LX6__
 extern const char binary_aie_pdi_start[];
 extern const char binary_aie_pdi_end[];
-#else
-#define DRAM_MGMT_BASE_ADDR 0x18000000U
-#endif
 extern void SetDebugPdi(uint32_t* Pdi, uint32_t len, uint8_t checkDmaData);
 extern uint32_t GetPdiOffset();
 int SetChecksum(void *Buffer)
