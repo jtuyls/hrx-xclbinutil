@@ -27,7 +27,6 @@
 #ifndef _ENABLE_IPU_LX6_
 #include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
 uint8_t XPdi_Cmd_Match(uint32_t CmdId)
 {
@@ -235,8 +234,8 @@ void XPdi_Export(const XPdiLoad* PdiLoad, const char* pdi_file_out)
   const char* pdi_file = pdi_file_out;
   char* Buf = (char *)PdiLoad->PdiPtr;
   uint32_t len = PdiLoad->PdiLen;
-  FILE * fp = fopen (pdi_file,"w");
-  //int fd = open(pdi_file, O_WRONLY | O_CREAT | O_TRUNC);
+  /* "wb": the PDI is binary — text mode would translate newlines on Windows. */
+  FILE * fp = fopen (pdi_file,"wb");
   if (fp == NULL)
   {
     printf("%s create failed Error Number % d\n", pdi_file, errno);

@@ -62,11 +62,11 @@ typedef unsigned char uuid_t[16];   /* self-contained: see above */
 #  include <cstdlib>
 #  include <cstdint>
 #  include <algorithm>
-#  include <windows/uuid.h>
+typedef unsigned char uuid_t[16];   /* self-contained: see above (no XRT windows/uuid.h dep) */
 # else
 #  include <stdlib.h>
 #  include <stdint.h>
-#  include <windows/uuid.h>
+typedef unsigned char uuid_t[16];   /* self-contained: see above */
 # endif
 #endif
 
@@ -86,6 +86,8 @@ typedef uuid_le xuid_t;
 typedef uuid_t xuid_t;
 #elif defined(_WIN32) && defined(_KERNEL_MODE)
 typedef GUID xuid_t;
+#elif defined(_WIN32) && !defined(_KERNEL_MODE)
+typedef uuid_t xuid_t;   /* mirrors the Linux user-mode case; xuid_t is used by struct fields below */
 #endif
 
 // ----------------- Custom Assert Macro -------------------------

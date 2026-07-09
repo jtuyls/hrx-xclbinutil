@@ -26,10 +26,6 @@
 #include <utility>
 #include <vector>
 
-// ===== from compat/boost/version.hpp =====
-// Shim: pretend to be Boost 1.81 so modern (>=1.64) code paths are selected.
-#define BOOST_VERSION 108100
-#define BOOST_LIB_VERSION "1_81"
 // ===== from compat/boost/optional.hpp =====
 // Shim for hrx::optional<T>, including the lvalue-reference specialization
 // (hrx::optional<const T&>) that std::optional cannot express. Covers the
