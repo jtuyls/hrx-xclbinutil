@@ -23,7 +23,6 @@
 /***************************** Include Files *********************************/
 #include <stdio.h>
 #include <string.h>
-#include "printf.h"
 #include "cdo_cmd.h"
 #include "load_pdi.h"
 #include "pdi-transform.h"
@@ -32,9 +31,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>  // open, close
 #include <errno.h>
-#include <unistd.h> // for read()
 
 /************************** Constant Definitions *****************************/
 
@@ -104,15 +101,16 @@ void test_read_pdi(char* pdi, char** data, int* len)
   #define BUF_SIZE (1024*1024)
   *data = NULL;
   *len = 0;
-  int fd = open(pdi, O_RDONLY | O_CREAT, 0644);
-  if (fd ==-1)
+  /* "rb": the PDI is binary — text mode would translate newlines on Windows. */
+  FILE* fp = fopen(pdi, "rb");
+  if (fp == NULL)
   {
-    printf("%s create failed Error Number % d\n", pdi, errno);
+    printf("%s open failed Error Number % d\n", pdi, errno);
     return;
   }
   *data = (char *)malloc((size_t)BUF_SIZE);
-  *len = (int)read(fd, *data, (size_t)BUF_SIZE);
-  close(fd);
+  *len = (int)fread(*data, 1, (size_t)BUF_SIZE, fp);
+  fclose(fp);
 }
 
 

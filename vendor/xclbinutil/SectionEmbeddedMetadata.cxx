@@ -62,11 +62,7 @@ SectionEmbeddedMetadata::marshalFromJSON(const hrx::property_tree::ptree& _ptSec
 {
 
   XUtil::TRACE("Writing XML\n");
-  #if (BOOST_VERSION >= 105600)
   hrx::property_tree::xml_writer_settings<std::string> settings(' ', 2);
-  #else
-  hrx::property_tree::xml_writer_settings<char> settings(' ', 2);
-  #endif
 
   hrx::property_tree::write_xml(_buf, _ptSection, settings);
 }

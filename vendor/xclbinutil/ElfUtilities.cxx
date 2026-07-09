@@ -70,7 +70,6 @@ auto findExecutablePath(const std::string& executable)
   }
 #endif
 
-#if (BOOST_VERSION >= 106400)
   // -- Check the path
   if (executablePath.string().empty()) {
     XUtil::TRACE("Step 2: Looking for executable path");
@@ -80,7 +79,6 @@ auto findExecutablePath(const std::string& executable)
       XUtil::TRACE("Not found");
 
   }
-#endif
 
   // -- Default path /usr/bin
   if (executablePath.string().empty())

@@ -27,7 +27,7 @@ typedef uint32_t TaskHandle_t;
 /************************** Constant Definitions *****************************/
 #include <stdint.h>
 #include "cdo_common.h"
-#include <printf.h>
+#include <stdio.h>   /* printf() — was <printf.h>, an embedded-target header not present on a host build */
 /************************** Function Prototypes ******************************/
 static char* DebugPdi = NULL;
 static uint32_t MaxLen = 0;

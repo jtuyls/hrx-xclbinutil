@@ -33,18 +33,21 @@
 #include <memory>
 #include <vector>
 
-#if (BOOST_VERSION >= 106400)
-
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0501
-#pragma warning (disable : 4244) // Addresses Boost conversion Windows build warnings
-#endif  
+#endif
 
-// boost-free: exec() reimplemented with fork/exec/pipe (see below).
+// boost-free: exec() is reimplemented below — fork/exec/pipe on POSIX,
+// _pipe/_spawnvp on Windows.
 #include <array>
 #include <cstdio>
-#include <unistd.h>
-#include <sys/wait.h>
+#ifdef _WIN32
+  #include <fcntl.h>    // _O_BINARY
+  #include <io.h>       // _pipe, _dup, _dup2, _read, _close
+  #include <process.h>  // _spawnvp, _P_NOWAIT, _cwait
+#else
+  #include <unistd.h>
+  #include <sys/wait.h>
 #endif
 
 
@@ -1147,16 +1150,77 @@ XclBinUtilities::transformAiePartitionPDIs(XclBin & xclbin)
 #endif
 
 
-#if (BOOST_VERSION >= 106400)
-int 
+// Read a pipe's read-end to EOF into `os`, then close it.
+static void
+drainPipe(int fd, std::ostringstream& os)
+{
+  std::array<char, 4096> buf;
+  for (;;) {
+#ifdef _WIN32
+    const int n = _read(fd, buf.data(), static_cast<unsigned int>(buf.size()));
+#else
+    const ssize_t n = read(fd, buf.data(), buf.size());
+#endif
+    if (n <= 0)
+      break;
+    os.write(buf.data(), n);
+  }
+#ifdef _WIN32
+  _close(fd);
+#else
+  close(fd);
+#endif
+}
+
+int
 XclBinUtilities::exec(const fs::path &cmd,
                       const std::vector<std::string> &args,
                       bool bThrow,
                       std::ostringstream & os_stdout,
                       std::ostringstream & os_stderr)
 {
-  // boost-free reimplementation using fork/exec with stdout+stderr pipes.
+  // boost-free reimplementation capturing stdout+stderr on separate pipes.
   int outPipe[2], errPipe[2];
+  int exitCode = -1;
+  const std::string cmdStr = cmd.string();
+
+#ifdef _WIN32
+  // Windows has no fork(): redirect our own stdout/stderr onto the pipe write
+  // ends so the spawned child inherits them, then restore them immediately.
+  if (_pipe(outPipe, 4096, _O_BINARY) != 0 || _pipe(errPipe, 4096, _O_BINARY) != 0)
+    throw std::runtime_error("exec: failed to create pipes");
+
+  const int savedOut = _dup(_fileno(stdout));
+  const int savedErr = _dup(_fileno(stderr));
+  _dup2(outPipe[1], _fileno(stdout));
+  _dup2(errPipe[1], _fileno(stderr));
+  _close(outPipe[1]);
+  _close(errPipe[1]);
+
+  std::vector<const char*> argv;
+  argv.push_back(cmdStr.c_str());
+  for (const auto& a : args) argv.push_back(a.c_str());
+  argv.push_back(nullptr);
+
+  const intptr_t pid = _spawnvp(_P_NOWAIT, cmdStr.c_str(), argv.data());
+
+  // Restore our own stdout/stderr before draining.
+  _dup2(savedOut, _fileno(stdout)); _close(savedOut);
+  _dup2(savedErr, _fileno(stderr)); _close(savedErr);
+
+  if (pid == -1) {
+    _close(outPipe[0]);
+    _close(errPipe[0]);
+    throw std::runtime_error("exec: failed to spawn " + cmdStr);
+  }
+
+  drainPipe(outPipe[0], os_stdout);
+  drainPipe(errPipe[0], os_stderr);
+
+  int status = 0;
+  _cwait(&status, pid, 0);
+  exitCode = status;
+#else
   if (pipe(outPipe) != 0 || pipe(errPipe) != 0)
     throw std::runtime_error("exec: failed to create pipes");
 
@@ -1171,7 +1235,6 @@ XclBinUtilities::exec(const fs::path &cmd,
     close(outPipe[0]); close(outPipe[1]);
     close(errPipe[0]); close(errPipe[1]);
     std::vector<char*> argv;
-    std::string cmdStr = cmd.string();
     argv.push_back(const_cast<char*>(cmdStr.c_str()));
     for (const auto& a : args) argv.push_back(const_cast<char*>(a.c_str()));
     argv.push_back(nullptr);
@@ -1182,20 +1245,15 @@ XclBinUtilities::exec(const fs::path &cmd,
   // parent: read both pipes to EOF
   close(outPipe[1]);
   close(errPipe[1]);
-  auto drain = [](int fd, std::ostringstream& os) {
-    std::array<char, 4096> buf;
-    ssize_t n;
-    while ((n = read(fd, buf.data(), buf.size())) > 0) os.write(buf.data(), n);
-    close(fd);
-  };
-  drain(outPipe[0], os_stdout);
-  drain(errPipe[0], os_stderr);
+  drainPipe(outPipe[0], os_stdout);
+  drainPipe(errPipe[0], os_stderr);
 
   int status = 0;
   waitpid(pid, &status, 0);
 
   // Obtain the exit code from the running process
-  int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+  exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+#endif
 
   if (exitCode != 0) {
     auto errMsg = hrx::format("Error: Shell command exited with a non-zero value (%d)\n"
@@ -1212,41 +1270,5 @@ XclBinUtilities::exec(const fs::path &cmd,
 
   return exitCode;
 }
-
-#else
-int 
-XclBinUtilities::exec(const fs::path &cmd,
-                      const std::vector<std::string> &args,
-                      bool bThrow,
-                      std::ostringstream & os_stdout,
-                      std::ostringstream & os_stderr)
-{
-  // Build the command line
-  const std::string cmdLine = cmd.string() + " " + hrx::algorithm::join(args, " ");
-
-  std::array<char, 128> buffer;
-  std::string result;
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmdLine.c_str(), "r"), pclose);
-  if (!pipe) {
-    auto errMsg = hrx::format("Error: Shell command failed\n"
-                                "       Cmd: %s %s\n")
-                                % cmd.string() % hrx::algorithm::join(args, " ");
-                                      
-    if (bThrow) 
-      throw std::runtime_error(errMsg.str());
-
-    return 1;
-  }
-
-  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) 
-    result += buffer.data();
-
-  os_stdout << result;
-
-  return 0;                   
-}
-
-
-#endif
 
 

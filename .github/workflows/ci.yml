@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Builds hrx-xclbinutil on public GitHub runners (Linux, clang + gcc) and runs the
-# functional smoke test. No NPU, no XRT, no Boost — the tool is self-contained.
+# Builds hrx-xclbinutil on public GitHub runners — Linux (clang + gcc) and Windows
+# (clang-cl) — and runs the functional smoke test. No NPU, no XRT, no Boost — the tool
+# is self-contained.
 name: ci
 
 on:
@@ -35,3 +36,21 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  build-and-test-windows:
+    runs-on: windows-latest
+    name: build-and-test (windows, clang-cl)
+    steps:
+      - uses: actions/checkout@v4
+
+      # clang-cl, not cl: the vendored aie-pdi-transform sources use GNU extensions
+      # (__attribute__((aligned)), void* arithmetic) that MSVC's cl rejects and clang
+      # accepts.
+      - name: Configure (clang-cl)
+        run: cmake -B build -S . -A x64 -T ClangCL
+
+      - name: Build
+        run: cmake --build build --config Release --target hrx-xclbinutil --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure

@@ -47,10 +47,13 @@ set(_util_srcs "${_util}/hrx_util.cpp")
 
 add_executable(hrx-xclbinutil ${_xclbinutil_srcs} ${_util_srcs})
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+# ws2_32: on Windows ntohl/htonl/ntohs/htons come from winsock2 (DTC.cxx,
+# FDTNode.cxx, FDTProperty.cxx, XclBinUtilities.cxx); on POSIX they are in libc.
 target_link_libraries(hrx-xclbinutil
                       PRIVATE
                       Threads::Threads
-                      $<BUILD_LOCAL_INTERFACE:transformcdo>)
+                      $<BUILD_LOCAL_INTERFACE:transformcdo>
+                      $<$<PLATFORM_ID:Windows>:ws2_32>)
 target_include_directories(hrx-xclbinutil
                            PRIVATE
                                    ${_util}
