@@ -139,7 +139,7 @@ uint32_t XPdi_Cmd_Parse(char* pdi_buf, uint32_t BufLen, const uint32_t *Buf)
     BufLen -= Cmd.Size;
   }
   // printf("buf len is %ld\n", cur_pdi_buf - pdi_buf);
-  XCdo_Print("buf len is %ld\n", cur_pdi_buf - pdi_buf);
+  XCdo_Print("buf len is %lld\n", (long long)(cur_pdi_buf - pdi_buf));
   return cur_pdi_buf - pdi_buf;
 }
 
@@ -157,7 +157,12 @@ uint8_t is_bss(uint32_t dst_addr)
 
 uint8_t allZero(void* mem, size_t len)
 {
-  do { if (*((char*)mem++) != 0 ) return 0; } while(--len);
+  /* Arithmetic on void* is a GNU extension; MSVC cl rejects it (C2036 'unknown size').
+     Iterate over unsigned char, which is also what the old ((char*)mem++) meant. */
+  const unsigned char* p = (const unsigned char*)mem;
+  for (size_t i = 0; i < len; ++i) {
+    if (p[i] != 0) return 0;
+  }
   return 1;
 }
 //prepare the data zone
@@ -219,7 +224,7 @@ uint32_t XPdi_Buf_Parse(char* pdi_buf, uint32_t CBufLen, uint32_t BufLen, const 
         break;
     } 
     // printf("cmd_id %d num %d , new buf %ldB, origin buf %uB\n", CmdId, num, data_buf - obuf, BufLen * 4);
-    XCdo_Print("cmd_id %d num %d , new buf %ldB, origin buf %uB\n", CmdId, num, data_buf - obuf, BufLen * 4);
+    XCdo_Print("cmd_id %d num %d , new buf %lldB, origin buf %uB\n", CmdId, num, (long long)(data_buf - obuf), BufLen * 4);
   }
   // printf("the all zeror dma data length is  %d\n", dma_zero_data_size);
   XCdo_Print("the all zeror dma data length is  %d\n", dma_zero_data_size);

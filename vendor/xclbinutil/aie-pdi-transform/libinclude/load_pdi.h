@@ -71,7 +71,7 @@ typedef struct {
  * It contains all the information of image header table in order.
  */
 typedef struct {
-	uint32_t Version; /**< PDI version used  */
+	_Alignas(16) uint32_t Version; /**< PDI version used  */
 	uint32_t NoOfImgs; /**< No of images present  */
 	uint32_t ImgHdrAddr; /**< Address to start of 1st Image header*/
 	uint32_t NoOfPrtns; /**< No of partitions present  */
@@ -89,14 +89,18 @@ typedef struct {
 	uint32_t KekIv[3U]; /**< Kek IV for meta header decryption */
 	uint32_t Rsvd[9U]; /**< Reserved */
 	uint32_t Checksum; /**< Checksum of the image header table */
-} XilPdi_ImgHdrTbl __attribute__ ((aligned(16U)));
+} XilPdi_ImgHdrTbl;
+_Static_assert(sizeof(XilPdi_ImgHdrTbl) == XIH_IHT_LEN,
+               "XilPdi_ImgHdrTbl must match the on-media PDI header length");
+_Static_assert(_Alignof(XilPdi_ImgHdrTbl) == 16U,
+               "XilPdi_ImgHdrTbl is cast onto a 16-byte-aligned PDI buffer");
 
 /*
  * Structure to store the Image header details.
  * It contains all the information of Image header in order.
  */
 typedef struct {
-	uint32_t FirstPrtnHdr; /**< First partition header in the image */
+	_Alignas(16) uint32_t FirstPrtnHdr; /**< First partition header in the image */
 	uint32_t NoOfPrtns; /**< Number of partitions in the image */
 	uint32_t EncRevokeID; /**< Revocation ID of meta header */
 	uint32_t ImgAttr; /**< Image Attributes */
@@ -108,14 +112,18 @@ typedef struct {
 	uint64_t CopyToMemoryAddr; /**< Address at which image is backed up in DDR */
 	uint32_t Rsvd; /**< Reserved */
 	uint32_t Checksum; /**< Checksum of the image header */
-} XilPdi_ImgHdr __attribute__ ((aligned(16U)));
+} XilPdi_ImgHdr;
+_Static_assert(sizeof(XilPdi_ImgHdr) == XIH_IH_LEN,
+               "XilPdi_ImgHdr must match the on-media PDI header length");
+_Static_assert(_Alignof(XilPdi_ImgHdr) == 16U,
+               "XilPdi_ImgHdr is cast onto a 16-byte-aligned PDI buffer");
 
 /*
  * Structure to store the partition header details.
  * It contains all the information of partition header in order.
  */
 typedef struct {
-	uint32_t EncDataWordLen; /**< Enc word length of partition*/
+	_Alignas(16) uint32_t EncDataWordLen; /**< Enc word length of partition*/
 	uint32_t UnEncDataWordLen; /**< Unencrypted word length */
 	uint32_t TotalDataWordLen; /**< Total word length including the authentication
 							certificate if any*/
@@ -136,7 +144,11 @@ typedef struct {
 	uint32_t Reserved[6U]; /**< Reserved */
 	TranformInfo TInfo;
 	uint32_t Checksum; /**< checksum of the partition header */
-} XilPdi_PrtnHdr __attribute__ ((aligned(16U)));
+} XilPdi_PrtnHdr;
+_Static_assert(sizeof(XilPdi_PrtnHdr) == XIH_PH_LEN,
+               "XilPdi_PrtnHdr must match the on-media PDI header length");
+_Static_assert(_Alignof(XilPdi_PrtnHdr) == 16U,
+               "XilPdi_PrtnHdr is cast onto a 16-byte-aligned PDI buffer");
 
 /*****************************************************************************/
 
