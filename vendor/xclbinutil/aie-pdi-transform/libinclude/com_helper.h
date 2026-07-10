@@ -6,21 +6,8 @@
 #ifndef __COM_HELPER_H__
 #define __COM_HELPER_H__
 
-#ifdef _ENABLE_IPU_LX6_
-#include "com_io_ipu_lx6.h"
-#endif
-#ifdef _ENABLE_FREERTOS_
-#include <stdbool.h>
-#include <FreeRTOS.h>
-#include "com_io_generic.h"
-#include "task.h"
-#include "semphr.h"
-#endif /* _ENABLE_IPU_LX6_ */
-
-#ifdef _ENABLE_IPU_LX6_
-typedef uint32_t SemaphoreHandle_t;
-typedef uint32_t TaskHandle_t;
-#endif
+/* SemaphoreHandle_t / TaskHandle_t are provided by cdo_io_debug.h, which cdo_io.h
+ * includes before this header. */
 
 enum ipu_resources {
     ERT_QUEUE_TAIL_H2C_DOORBELL = 0,

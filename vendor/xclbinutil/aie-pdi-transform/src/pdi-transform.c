@@ -24,7 +24,6 @@
 #include <string.h>
 #include "cdo_cmd.h"
 #include "load_pdi.h"
-#ifndef _ENABLE_IPU_LX6_
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -331,4 +330,3 @@ void XPdi_Compress_Transform(XPdiLoad* PdiLoad, const char* pdi_file_out)
   free(pdi_buf);
   return;
 }
-#endif
