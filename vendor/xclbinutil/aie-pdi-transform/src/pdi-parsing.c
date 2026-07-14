@@ -25,6 +25,7 @@
 #include <string.h>
 #include "cdo_cmd.h"
 #include "load_pdi.h"
+#include "xpdi_compiler.h"
 #include "pdi-transform.h"
 #include "pdi-parsing-debug.h"
 #include <assert.h>
@@ -112,15 +113,20 @@ void test_read_pdi(char* pdi, char** data, int* len)
 // cdo_common.h
 FILE* file_pointer;
 
-__attribute__((visibility("default"))) int pdi_transform(char* pdi_file,  char* pdi_file_out, const char* out_file)
+XPDI_EXPORT int pdi_transform(char* pdi_file,  char* pdi_file_out, const char* out_file)
 {
    if (!out_file || (out_file[0] == '\0')) 
      file_pointer = stdout;
    else 
      file_pointer = fopen(out_file, "a");
+   if (file_pointer == NULL)   /* fopen failed; do not hand NULL to setvbuf */
+     file_pointer = stdout;
 
-   // Set the file stream to line-buffered mode
-   setvbuf(file_pointer, NULL, _IOLBF, 0);
+   /* Line-buffer the log. size must be >= 2 on the MSVC CRT: it documents
+      "Allowable range: 2 <= size <= INT_MAX" and otherwise invokes the invalid-parameter
+      handler, which terminates the process. POSIX tolerates 0. (On Win32 _IOLBF behaves
+      as _IOFBF anyway.) */
+   setvbuf(file_pointer, NULL, _IOLBF, BUFSIZ);
 
   int Ret = 0;
   printf("Get pdi file %s, do tranform pdi check and parsing.\n", pdi_file);
@@ -143,9 +149,18 @@ __attribute__((visibility("default"))) int pdi_transform(char* pdi_file,  char* 
   XCdo_Print("Pdi parsing... file = %s; len = %u\n", pdi_file, PdiLoad.PdiLen);
   #define MAX_DEBUG_PDI_LEN (1024*500)
   const uint8_t cmpDmaData = 1;
-  char DebugPdi[MAX_DEBUG_PDI_LEN], DebugTransformPdi[MAX_DEBUG_PDI_LEN];
-  memset((char*)DebugPdi, 0, (size_t)MAX_DEBUG_PDI_LEN);
-  memset((char*)DebugTransformPdi, 0, (size_t)MAX_DEBUG_PDI_LEN);
+  /* 2 x 500 KiB. As locals these overflow Windows' 1 MiB default thread stack (Linux
+     defaults to 8 MiB, which is why it only ever crashed there). Heap-allocate; calloc
+     also does the zeroing the memsets used to. */
+  char *DebugPdi = (char *)calloc((size_t)MAX_DEBUG_PDI_LEN, 1);
+  char *DebugTransformPdi = (char *)calloc((size_t)MAX_DEBUG_PDI_LEN, 1);
+  if (DebugPdi == NULL || DebugTransformPdi == NULL) {
+    printf("Out of memory allocating the PDI debug buffers\n");
+    free(DebugPdi);
+    free(DebugTransformPdi);
+    free(data);
+    return -1;
+  }
   SetDebugPdi((uint32_t *)DebugPdi, MAX_DEBUG_PDI_LEN, cmpDmaData);
   // printf("Original ");
   XPdi_Load(&PdiLoad);
@@ -166,6 +181,8 @@ __attribute__((visibility("default"))) int pdi_transform(char* pdi_file,  char* 
   }
 
   printf("The transform PDI check pass!!! Transformed PDI is consistent with traditional PDI\n");
+  free(DebugPdi);
+  free(DebugTransformPdi);
   if (data) free(data);
   return Ret;
 }

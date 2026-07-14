@@ -101,7 +101,7 @@ static inline uint32_t XCdo_IoRead32(uintptr_t Addr)
 static inline int XCdo_IoMemcpy(void * dest, const void * src,
 		size_t n)
 {
-	XCdo_Print("COPY: Dest: %p, Src: %p, Size: %lu(Bytes) PdiOffset =%d\n",
+	XCdo_Print("COPY: Dest: %p, Src: %p, Size: %zu(Bytes) PdiOffset =%d\n",
 		dest, src, n, PdiOffset);
 	IoAssignVar(XCDO_CMD_DMAWRITE);
 	IoAssignVar((uint64_t)dest);

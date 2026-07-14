@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Builds hrx-xclbinutil on public GitHub runners — Linux (clang + gcc) and Windows
-# (clang-cl) — and runs the functional smoke test. No NPU, no XRT, no Boost — the tool
-# is self-contained.
+# (cl + clang-cl) — and runs the functional smoke test. No NPU, no XRT, no Boost — the
+# tool is self-contained.
 name: ci
 
 on:
@@ -31,26 +31,39 @@ jobs:
           cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX"
 
+      # Build the default target, not just hrx-xclbinutil: ctest needs the test
+      # executables too, and naming one target means a test added later silently
+      # never runs.
       - name: Build
-        run: cmake --build build --target hrx-xclbinutil --parallel
+        run: cmake --build build --parallel
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  # Both Windows compilers. They are not interchangeable for consumers of this tool:
+  # rocm-npu-staging builds the whole NPU stack with one compiler, and mlir-aie is only
+  # tested with cl while IREE prefers clang-cl. Keeping both green here means that choice
+  # stays open. The vendored aie-pdi-transform sources use no GNU-only syntax any more —
+  # see libinclude/xpdi_compiler.h.
   build-and-test-windows:
     runs-on: windows-latest
-    name: build-and-test (windows, clang-cl)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - toolset: msvc-cl
+            cmake_toolset: ""            # default VS toolset = cl.exe
+          - toolset: clang-cl
+            cmake_toolset: "-T ClangCL"
+    name: build-and-test (windows, ${{ matrix.toolset }})
     steps:
       - uses: actions/checkout@v4
 
-      # clang-cl, not cl: the vendored aie-pdi-transform sources use GNU extensions
-      # (__attribute__((aligned)), void* arithmetic) that MSVC's cl rejects and clang
-      # accepts.
-      - name: Configure (clang-cl)
-        run: cmake -B build -S . -A x64 -T ClangCL
+      - name: Configure
+        run: cmake -B build -S . -A x64 ${{ matrix.cmake_toolset }}
 
       - name: Build
-        run: cmake --build build --config Release --target hrx-xclbinutil --parallel
+        run: cmake --build build --config Release --parallel
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure

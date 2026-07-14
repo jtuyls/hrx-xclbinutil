@@ -70,3 +70,15 @@ set_target_properties(hrx-xclbinutil
 enable_testing()
 add_test(NAME smoke
          COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/test/run_tests.sh $<TARGET_FILE:hrx-xclbinutil>)
+
+# Reaches aie-pdi-transform, which the smoke test does not: the tool's --transform-pdi CLI
+# path is #ifndef _WIN32, but the library builds everywhere, so linking it directly gives
+# the PDI header structs runtime coverage under MSVC cl too. Golden output was produced by
+# the pre-change code and must stay byte-for-byte stable.
+add_executable(pdi_transform_test test/pdi_transform_test.c)
+target_link_libraries(pdi_transform_test PRIVATE transformcdo)
+add_test(NAME pdi_transform
+         COMMAND $<TARGET_FILE:pdi_transform_test>
+                 ${CMAKE_CURRENT_SOURCE_DIR}/test/data/sample.pdi
+                 ${CMAKE_CURRENT_SOURCE_DIR}/test/data/sample_transformed.pdi
+                 ${CMAKE_CURRENT_BINARY_DIR}/pdi_transform_test_out.pdi)
